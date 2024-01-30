@@ -1,0 +1,48 @@
+CREATE OR REPLACE
+ALGORITHM = UNDEFINED VIEW `moodle-pos`.`view_02_QUANTIDADE DE TÓPICOS CONCLUÍDOS` AS
+select
+    `u`.`id` AS `userid`,
+    `u`.`username` AS `username`,
+    `u`.`firstname` AS `firstname`,
+    `c`.`id` AS `courseid`,
+    `c`.`shortname` AS `shortname`,
+    `c`.`fullname` AS `fullname`,
+    year(from_unixtime(`cmc`.`timemodified`)) AS `ano_referencia`,
+    month(from_unixtime(`cmc`.`timemodified`)) AS `mes_referencia`,
+    `msr`.`section_name` AS `section_name`,
+    `msr`.`total_resources` AS `total_resources`,
+    `msr`.`resources_viewed` AS `resources_viewed`,
+    `msr`.`dates_viewed` AS `dates_viewed`
+from
+    ((`moodle-pos`.`mdl_course_modules_completion` `cmc`
+left join ((((((`moodle-pos`.`mdl_course_modules` `cm`
+join `moodle-pos`.`mdl_videos` `v` on
+    ((`v`.`id` = `cm`.`instance`)))
+join `moodle-pos`.`mdl_course` `c` on
+    ((`c`.`id` = `cm`.`course`)))
+join `moodle-pos`.`mdl_context` `ctx` on
+    (((`ctx`.`instanceid` = `c`.`id`)
+    and (`ctx`.`contextlevel` = 50))))
+join `moodle-pos`.`mdl_role_assignments` `ra` on
+    ((`ra`.`contextid` = `ctx`.`id`)))
+join `moodle-pos`.`mdl_role` `r` on
+    (((`r`.`id` = `ra`.`roleid`)
+    and (`r`.`shortname` = 'student'))))
+join `moodle-pos`.`mdl_user` `u` on
+    ((`u`.`id` = `ra`.`userid`))) on
+    (((`cmc`.`coursemoduleid` = `cm`.`id`)
+    and (`cmc`.`userid` = `u`.`id`))))
+join `moodle-pos`.`moodle_section_resources` `msr` on
+    (((`msr`.`user_id` = `u`.`id`)
+    and (`msr`.`course_id` = `c`.`id`))))
+where
+    ((`cm`.`module` = (
+    select
+        `m`.`id`
+    from
+        `moodle-pos`.`mdl_modules` `m`
+    where
+        (`m`.`name` = 'videos')))
+    and (`c`.`id` in (378, 375, 379, 381))
+    and (`u`.`username` regexp '^[0-9]+$')
+    and (year(from_unixtime(`cmc`.`timemodified`)) in (2022, 2023)))

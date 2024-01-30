@@ -1,0 +1,40 @@
+CREATE OR REPLACE
+ALGORITHM = UNDEFINED VIEW `moodle-pos`.`view_03_QUANTIDADE DE DESAFIOS CONCLUIDOS` AS
+select
+    `c`.`id` AS `course_id`,
+    `c`.`shortname` AS `course_shortname`,
+    `c`.`fullname` AS `course_fullname`,
+    `a`.`id` AS `assign_id`,
+    `a`.`name` AS `assign_name`,
+    `u`.`id` AS `user_id`,
+    `u`.`username` AS `user_username`,
+    `u`.`firstname` AS `user_firstname`,
+    `u`.`lastname` AS `user_lastname`,
+    (case
+        when (`s`.`status` = 'submitted') then 'Sim'
+        else 'Não'
+    end) AS `submitted`,
+    cast(from_unixtime(`s`.`timemodified`) as date) AS `data_conclusao`
+from
+    (((((`moodle-pos`.`mdl_course` `c`
+join `moodle-pos`.`mdl_course_modules` `cm` on
+    ((`cm`.`course` = `c`.`id`)))
+join `moodle-pos`.`mdl_modules` `m` on
+    ((`m`.`id` = `cm`.`module`)))
+join `moodle-pos`.`mdl_assign` `a` on
+    ((`a`.`id` = `cm`.`instance`)))
+join `moodle-pos`.`mdl_assign_submission` `s` on
+    ((`s`.`assignment` = `a`.`id`)))
+join `moodle-pos`.`mdl_user` `u` on
+    ((`u`.`id` = `s`.`userid`)))
+where
+    ((`m`.`name` = 'assign')
+    and (`s`.`timemodified` is not null)
+    and (`c`.`id` in (378, 375, 379, 381))
+    and (`u`.`username` regexp '^[0-9]+$')
+    and (year(from_unixtime(`s`.`timemodified`)) in (2022, 2023)))
+order by
+    `c`.`shortname`,
+    `c`.`fullname`,
+    `a`.`id`,
+    `u`.`username`

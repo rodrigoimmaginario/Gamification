@@ -1,0 +1,37 @@
+CREATE OR REPLACE
+ALGORITHM = UNDEFINED VIEW `moodle-pos`.`view_04_QUANTIDADE DE PARTICIPAÇÕES NO FORUM` AS
+select
+    `u`.`id` AS `userid`,
+    `u`.`username` AS `username`,
+    `u`.`firstname` AS `firstname`,
+    `c`.`id` AS `courseid`,
+    `c`.`shortname` AS `shortname`,
+    `c`.`fullname` AS `fullname`,
+    year(from_unixtime(`fp`.`created`)) AS `ano_referencia`,
+    month(from_unixtime(`fp`.`created`)) AS `mes_referencia`,
+    dayofmonth(from_unixtime(`fp`.`created`)) AS `dia_referencia`,
+    count(`fp`.`id`) AS `totalposts`
+from
+    (((((((`moodle-pos`.`mdl_forum_posts` `fp`
+join `moodle-pos`.`mdl_forum_discussions` `fd` on
+    ((`fd`.`id` = `fp`.`discussion`)))
+join `moodle-pos`.`mdl_forum` `f` on
+    ((`f`.`id` = `fd`.`forum`)))
+join `moodle-pos`.`mdl_role_assignments` `rs` on
+    ((`rs`.`userid` = `fp`.`userid`)))
+join `moodle-pos`.`mdl_role` `r` on
+    ((`r`.`id` = `rs`.`roleid`)))
+join `moodle-pos`.`mdl_context` `e` on
+    ((`rs`.`contextid` = `e`.`id`)))
+join `moodle-pos`.`mdl_course` `c` on
+    (((`c`.`id` = `e`.`instanceid`)
+    and (`e`.`contextlevel` = 50))))
+join `moodle-pos`.`mdl_user` `u` on
+    ((`u`.`id` = `fp`.`userid`)))
+where
+    ((`r`.`shortname` = 'student')
+    and (`c`.`id` in (378, 375, 379, 381))
+    and (`u`.`username` regexp '^[0-9]+$')
+    and (year(from_unixtime(`fp`.`created`)) in (2022, 2023)))
+group by
+    `fp`.`userid`
